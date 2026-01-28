@@ -188,6 +188,19 @@ spec:
               --overwrite
               
             echo "✓ Successfully labeled deployment $DEPLOYMENT_NAME"
+
+            # Ensure GPU toleration is present on the deployment
+            echo "Ensuring GPU toleration is set..."
+            if oc get deployment "$DEPLOYMENT_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.template.spec.tolerations}' | grep -q "nvidia.com/gpu"; then
+              echo "✓ GPU toleration already present"
+            else
+              if oc patch deployment "$DEPLOYMENT_NAME" -n "$NAMESPACE" --type='json' -p='[{"op":"add","path":"/spec/template/spec/tolerations","value":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}]}]'; then
+                echo "✓ Added GPU toleration list"
+              else
+                echo "Tolerations list exists; appending GPU toleration"
+                oc patch deployment "$DEPLOYMENT_NAME" -n "$NAMESPACE" --type='json' -p='[{"op":"add","path":"/spec/template/spec/tolerations/-","value":{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}}]'
+              fi
+            fi
             
             # Optionally verify the annotation and label were added
             echo "Current annotations on deployment:"
