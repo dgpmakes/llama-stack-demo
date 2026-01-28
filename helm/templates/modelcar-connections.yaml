@@ -1,0 +1,20 @@
+{{- range .Values.models }}
+{{- if not .url }}
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: {{ .name }}
+  labels:
+    opendatahub.io/dashboard: 'true'
+    app.kubernetes.io/part-of: {{ $.Values.partOf }}
+  annotations:
+    opendatahub.io/connection-type-protocol: uri
+    opendatahub.io/connection-type-ref: uri-v1
+    openshift.io/description: ''
+    openshift.io/display-name: {{ .name }}
+stringData:
+  URI: oci://{{ .image }}
+type: Opaque
+{{- end }}
+{{- end }}

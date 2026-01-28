@@ -1,0 +1,49 @@
+🎉 Your vLLM + Llama Stack-powered Demo has been successfully deployed!
+
+You can access it from project **{{ .Release.Namespace }}**
+
+This version uses configuration from ConfigMap `{{ .Values.app }}-run`.
+
+Playground consists of:
+- ChatBot UI
+- Simple API
+
+Models deployed:
+{{- range .Values.models }}
+- {{ .name }}:
+    - URL: "{{ "http://" }}{{ .name }}-predictor:8080/v1"
+    - MODEL: "{{ .name }}"
+    - IMAGE: "{{ .image }}"
+  {{- if and .runtime .runtime.image }}
+    - RUNTIME: "{{ .runtime.image }}"
+  {{- end }}
+  {{- if .api_key }}
+    - API_KEY:: "{{ .api_key }}"
+  {{- end }}
+  {{- if .tlsVerify }}
+    - TLS_VERIFY: "{{ .tlsVerify }}"
+  {{- end }}
+  {{- if .maxTokens }}
+    - MAX_TOKENS: "{{ .maxTokens }}"
+  {{- end }}
+  {{- if .maxModelLen }}
+    - MAX\_MODEL\_LEN: "{{ .maxModelLen }}"
+  {{- end }}
+{{- end }}
+
+MCP Servers deployed:
+{{- range .Values.mcpServers }}
+- {{ .id }}:
+    - Git: {{ .vcs.uri }} / {{ .vcs.ref }}
+    - Runtime: {{ .runtime }}
+    - Image: {{ .image }}
+    - URI: uri: {{ .protocol }}://{{ .host }}:{{ .port }}{{ .uri }}
+    {{- if .env }}
+    - Environment variables:
+          {{- range .env }}
+          - {{ .name }}: {{ .value }}
+          {{- end }}
+    {{- end }}
+
+{{- end }}
+

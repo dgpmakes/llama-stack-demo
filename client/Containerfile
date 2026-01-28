@@ -1,0 +1,68 @@
+# Multi-purpose Containerfile for LlamaStack Client
+# Can be used for: run.py commands (Jobs), REST API, and Streamlit App
+#
+# Usage:
+#   - Jobs (document loading):  command: ["./start-run.sh", "load"]
+#   - REST API Server:          command: ["./start-api.sh"]
+#   - Streamlit Chat App:       command: ["./start-app.sh"]
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Accept a component name (optional, for labeling)
+ARG COMPONENT_NAME
+
+# Switch to root (UBI images default to non-root)
+USER 0
+
+# Install system dependencies (Milvus SDK sometimes needs gcc during build)
+RUN dnf install -y git gcc && dnf clean all
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    LOG_LEVEL=DEBUG
+
+# Set working directory
+WORKDIR /app
+
+# Install uv
+RUN curl -Ls https://astral.sh/uv/install.sh | sh && \
+    install -Dm755 "$HOME/.local/bin/uv" /usr/local/bin/uv
+
+# Copy only the files needed to install dependencies
+COPY pyproject.toml .
+
+# Install only runtime dependencies into the system Python
+RUN echo "Using Python 🐍 from: $(which python)" && \
+    python --version && \
+    uv pip install --python $(which python) --system .
+
+# Copy scripts
+COPY run.sh .
+COPY start-api.sh .
+COPY start-app.sh .
+
+# Make all scripts executable
+RUN chmod +x run.sh start-api.sh start-app.sh
+
+# Copy all application code
+COPY health-server.py .
+COPY files.py .
+COPY utils.py .
+COPY vector_stores.py .
+COPY streaming_logger.py .
+COPY agent_events.py .
+COPY commands/ ./commands/
+COPY run.py .
+COPY server.py .
+COPY app.py .
+
+# Switch to non-root user for runtime
+USER 1001
+
+# Expose common ports (can be overridden in deployment)
+EXPOSE 8000 8501 8081
+
+# No default CMD - will be specified at deployment time
+# This allows one image to be used for multiple purposes

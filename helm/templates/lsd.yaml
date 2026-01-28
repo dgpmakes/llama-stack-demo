@@ -1,0 +1,139 @@
+apiVersion: llamastack.io/v1alpha1
+kind: LlamaStackDistribution
+metadata:
+  name: {{ .Values.app }}
+  labels:
+    app: {{ .Values.app }}
+    app.kubernetes.io/component: {{ .Values.app }}
+    app.kubernetes.io/instance: {{ .Values.app }}
+    app.kubernetes.io/name: {{ .Values.app }}
+    app.kubernetes.io/part-of: {{ .Values.partOf }}
+    monitoring.opendatahub.io/scrape: 'true'
+    app.openshift.io/runtime: python
+spec:
+  replicas: 1
+  server:
+    userConfig:
+      configMapName: {{ .Values.app }}-run
+    containerSpec:
+      name: llama-stack
+      port: {{ .Values.lsdPort | default 8321 }}
+      env:
+        {{- $appName := .Values.app }}
+        {{- range .Values.models }}
+        - name: {{ include "rag-lsd.envVarName" .name }}_MODEL
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "rag-lsd.envVarName" .name }}_MODEL
+              name: {{ $appName }}-secret
+        - name: {{ include "rag-lsd.envVarName" .name }}_URL
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "rag-lsd.envVarName" .name }}_URL
+              name: {{ $appName }}-secret
+        {{- if .api_token }}
+        - name: {{ include "rag-lsd.envVarName" .name }}_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "rag-lsd.envVarName" .name }}_API_TOKEN
+              name: {{ $appName }}-secret
+        {{- end }}
+        {{- if .tls_verify }}
+        - name: {{ include "rag-lsd.envVarName" .name }}_TLS_VERIFY
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "rag-lsd.envVarName" .name }}_TLS_VERIFY
+              name: {{ $appName }}-secret
+        {{- end }}
+        {{- if .max_tokens }}
+        - name: {{ include "rag-lsd.envVarName" .name }}_MAX_TOKENS
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "rag-lsd.envVarName" .name }}_MAX_TOKENS
+              name: {{ $appName }}-secret
+        {{- end }}
+        {{- end }}
+        - name: MILVUS_DB_PATH
+          value: {{ .Values.milvusDbPath }}
+        - name: FMS_ORCHESTRATOR_URL
+          value: {{ .Values.fmsOchestratorUrl }}
+        - name: OTEL_SERVICE_NAME
+          value: {{ .Values.app }}
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: 'http://data-science-collector-collector-headless.redhat-ods-monitoring.svc.cluster.local:4318'
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: http/protobuf
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: 'http://data-science-collector-collector-headless.redhat-ods-monitoring.svc.cluster.local:4318/v1/traces'
+        - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+          value: 'http://data-science-collector-collector-headless.redhat-ods-monitoring.svc.cluster.local:4318/v1/metrics'
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: 'service.name=llamastack-user1-canopy,service.version=1.0.0,deployment.environment=development'
+        - name: OTEL_SERVICE_VERSION
+          value: 1.0.0
+        - name: OTEL_DEPLOYMENT_ENVIRONMENT
+          value: development
+        - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+          value: sqlite3
+        - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+          value: 'true'
+        - name: OTEL_BSP_MAX_QUEUE_SIZE
+          value: '512'
+        - name: OTEL_BSP_SCHEDULE_DELAY
+          value: '5000'
+        - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+          value: '100'
+        - name: OTEL_BSP_EXPORT_TIMEOUT
+          value: '30000'
+        - name: OTEL_METRIC_EXPORT_INTERVAL
+          value: '60000'
+        - name: TELEMETRY_SINKS
+          value: 'otel_trace, otel_metric'
+        # 2. DISABLED OTEL SDK TO STOP THE NAME RESOLUTION ERRORS
+        - name: OTEL_SDK_DISABLED
+          value: "true"
+        
+      {{- if .Values.lsdResources }}
+      resources:
+        {{- if .Values.lsdResources.limits }}
+        limits:
+          cpu: {{ .Values.lsdResources.limits.cpu | default "2" }}
+          memory: {{ .Values.lsdResources.limits.memory | default "12Gi" }}
+        {{- end }}
+        {{- if .Values.lsdResources.requests }}
+        requests:
+          cpu: {{ .Values.lsdResources.requests.cpu | default "250m" }}
+          memory: {{ .Values.lsdResources.requests.memory | default "1Gi" }}
+        {{- end }}
+      {{- end }}
+    distribution:
+      {{- if .Values.lsdImage }}
+      # This uses the specific SHA digest if you provided it in values.yaml
+      image: {{ .Values.lsdImage | quote }}
+      {{- else }}
+      # Fallback to the distribution name only if lsdImage is missing
+      name: {{ .Values.lsdName | default "rh-dev" | quote }}
+      {{- end }}
+    storage:
+      size: 5Gi
+      {{- if .Values.lsdMountPath }}
+      mountPath: {{ .Values.lsdMountPath }}
+      {{- end }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: "{{ .Values.app }}-route"
+  annotations:
+    haproxy.router.openshift.io/timeout: {{ .Values.routeTimeout | default "1m" }}
+spec:
+  port:
+    targetPort: http
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: "{{ .Values.app }}-service"
+    weight: 100
+  wildcardPolicy: None
