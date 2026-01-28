@@ -1,118 +1,4 @@
-# LLAMA STACK DEMO
-
-Welcome to this Llama Stack Demo you can run easily on Red Hat OpenShift AI (RHOAI). It's a comprehensive demo that deploys everything you need to test agents with MCP tools on RHOAI using Llama Stack:
-- Models: IBM Granite 3.3 and Llama 3.1 deployed using vLLM Serving Runtime and automatically added to Llama Stack
-- MCP Servers: deployed as normal deployments and automatically added to Llama Stack
-- Llama Stack Server: Llama Stack Server is deployed using the Llama Stack Operator included in Red Hat OpenShift AI
-
-## Trip Report
-
-I started with an MCP Server using TypeScript generated using Cursor.ai straight from legal documents. It tried to cover all the legal elements, it was complex and the logic tricky, several iterations to fine tune the descriptions to make it kind of work in a small model (SLM) like IBM Granite and Llama 3.2 (~7B both of them). I changed my strategy and also the programing language, from TypeScript to Rust and from the full logic generated from the legal documents to a decision table generated with Cursor.ai but with much more guidance (and simplification) from my side. This time it worked pretty well with Claude Desktop but not quite with the SLMs, the latest iteration had to do with the names of some variables, is_single_parent_family and number_of_children_after...
-
-The inner to outer loop:
-- decision table
-- code
-- unit testing
-- MCP Inspector
-- Claude Desktop
-- Llama Stack Local with models in RHOAI
-- Llama Stack on RHOAI
-
-
-## Detailed description 
-
-Eligibility Assessment System powered by Llama Stack and Model Context Protocol (MCP)!
-This system helps assess eligibility for Family Care Unpaid Leave Support based on the Republic of Lysmark's Act No. 2025/47-SA.
-To get started quickly, jump straight to [installation](#install).
-
-
-The Eligibility Assessment MCP Llama Stack system is an intelligent solution for evaluating eligibility for Family Care Unpaid Leave Support based on the Republic of Lysmark's legislation (Act No. 2025/47-SA and related regulations). The system combines the power of Llama Stack with Model Context Protocol (MCP) servers and Retrieval Augmented Generation (RAG) to provide accurate, context-aware assessments.
-
-This system is designed to help users understand their eligibility for unpaid leave assistance in various family care situations, including care for sick/injured family members, childcare for multiple children, adoption cases, and single-parent family scenarios.
-
-This deployment includes a Helm chart for setting up:
-
-- An OpenShift AI Project with all necessary components
-- Llama Stack distribution with Llama 3.1 8B model for natural language processing  
-- MCP server for the eligibility engine with specialized knowledge processing
-- Vector database (Milvus) with embedded legal documents for RAG capabilities
-- Document loader service to populate the knowledge base with Act No. 2025/47-SA and regulations
-- Llama Stack Playground interface for interactive eligibility consultations
-
-Use this project to quickly deploy an intelligent eligibility assessment system that provides accurate, legally-informed guidance on Family Care Unpaid Leave Support eligibility. 🏛️
-
-### See it in action
-
-Experience the Eligibility Assessment System through the Llama Stack Playground interface. After deployment, you can interact with the system to:
-- Ask questions about eligibility requirements for different family care scenarios
-- Get detailed assessments based on the legal framework of Act No. 2025/47-SA
-- Understand the documentation needed for applications
-- Learn about financial assistance amounts and duration limits
-
-### Architecture diagrams
-
-![architecture.png](images/architecture.png)
-
-### References 
-
-- [Llama Stack Distribution](https://llama-stack.readthedocs.io/en/latest/) - The foundational platform for LLM applications
-- [Model Context Protocol (MCP)](https://spec.modelcontextprotocol.io/) - Protocol for integrating context sources with language models  
-- [Eligibility Engine MCP Server](https://github.com/alpha-hack-program/eligibility-engine-mcp-rs) - Rust-based MCP server for eligibility processing
-- Llama Stack Docker images: [quay.io/opendatahub/llama-stack:odh](https://quay.io/opendatahub/llama-stack:odh)
-- Model images from Red Hat AI Services ModelCar Catalog
-- Based on Republic of Lysmark's Act No. 2025/47-SA: Family Care Unpaid Leave Support Act
-
-## Requirements 
-
-### Recommended hardware requirements 
-
-- **GPU**: 1x NVIDIA A10G or equivalent (for optimal LLM performance)
-- **CPU**: 8 cores 
-- **Memory**: 24 Gi (to handle Llama Stack, MCP servers, and vector database)
-- **Storage**: 20Gi (for models, vector database, and document storage)
-
-Note: The system uses quantized Llama 3.1 8B model (w4a16) for efficient GPU utilization while maintaining good performance.
-
-### Minimum hardware requirements 
-
-- **GPU**: 1x NVIDIA A10G-SHARED (shared GPU allocation)
-- **CPU**: 6 cores 
-- **Memory**: 16 Gi 
-- **Storage**: 10Gi 
-
-### Required software  
-
-- Red Hat OpenShift 4.16+ 
-- Red Hat OpenShift AI 2.16+ 
-- Dependencies for [Single-model server](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/2.16/html/installing_and_uninstalling_openshift_ai_self-managed/installing-the-single-model-serving-platform_component-install#configuring-automated-installation-of-kserve_component-install):
-    - Red Hat OpenShift Service Mesh
-    - Red Hat OpenShift Serverless
-- **Llama Stack Components**:
-    - Llama Stack Distribution with vLLM runtime
-    - Model Context Protocol (MCP) server support
-    - Vector database capabilities (Milvus)
-- **Container Images**:
-    - Llama Stack: `quay.io/opendatahub/llama-stack:odh`
-    - vLLM Runtime: `quay.io/modh/vllm:rhoai-2.23-cuda`
-    - Eligibility Engine MCP: `quay.io/atarazana/eligibility-engine-mcp-rs:latest`
-
-### Required permissions
-
-- Standard user. No elevated cluster permissions required 
-
-## Install
-
-**Please note before you start**
-
-This system was tested on Red Hat OpenShift 4.16.24 & Red Hat OpenShift AI v2.16.2.  
-Ensure you have access to GPU resources and the required container registries.
-
-### Clone
-
-```bash
-TODO git clone https://github.com/alpha-hack-program/.git && \
-    cd eligibility-mcp-llamastack/
-```
+Using OpenShift 4.20.6 and OpenShift AI 3.2.0.
 
 ### Log in OpenShift
 
@@ -142,6 +28,8 @@ Label project with
 oc label namespace ${PROJECT} modelmesh-enabled=false opendatahub.io/dashboard=true
 ```
 
+Install the Grafana operator.
+
 ### Install with Helm
 
 This default delployment deploys one model... TODO.
@@ -149,6 +37,7 @@ This default delployment deploys one model... TODO.
 ```bash
 helm install llama-stack-demo helm/ --namespace ${PROJECT} --timeout 20m
 ```
+
 
 If you have access to Intel Gaudi accelerators you could use this command which uses `helm/intel.values` instead:
 
