@@ -242,25 +242,22 @@ data:
       db_path: {{ .Values.lsdBaseDir }}/.llama/distributions/rh/inference_store.db
     models:
     {{- range .Values.models }}
-    {{- if .embeddingsModel }}
     - metadata:
-        embedding_dimension: {{ .vectorDimension }}
+        {{- if .embeddingsModel }}
+        embedding_dimension: {{ .vectorDimension | default $.Values.lsdEmbeddingDimension | default 768 }}
+        {{- else }}
+        {}
+        {{- end }}
       model_id: {{ .name | replace " " "-" | lower }}
-      provider_id: {{ .name | replace " " "-" | lower }}
-      model_type: embedding
-    {{- else }}
-    - metadata: {}
-      model_id: {{ .name | replace " " "-" | lower }}
-      provider_id: {{ .name | replace " " "-" | lower }}
-      model_type: llm
+      {{- /* Determine if the model is handled by the internal sentence-transformers provider */ -}}
+      {{- $isInternalEmbedding := and .connection (eq .connection.name "sentence-transformers") }}
+      provider_id: {{ if $isInternalEmbedding }}"sentence-transformers"{{ else }}{{ .name | replace " " "-" | lower }}{{ end }}
+      {{- if $isInternalEmbedding }}
+      # This tells the provider which Hugging Face repo to download
+      provider_model_id: {{ .id | quote }}
+      {{- end }}
+      model_type: {{ if .embeddingsModel }}embedding{{ else }}llm{{ end }}
     {{- end }}
-    {{- end }}
-    - metadata:
-        embedding_dimension: 768
-      model_id: nomic-embed-text-v1.5
-      provider_id: sentence-transformers
-      provider_model_id: nomic-ai/nomic-embed-text-v1.5
-      model_type: embedding
     shields: []
     vector_dbs: []
     datasets: []
