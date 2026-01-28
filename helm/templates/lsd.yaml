@@ -12,6 +12,12 @@ metadata:
     app.openshift.io/runtime: python
 spec:
   replicas: 1
+  template:
+    spec:
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
   server:
     userConfig:
       configMapName: {{ .Values.app }}-run
