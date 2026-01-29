@@ -96,7 +96,6 @@ spec:
           value: '60000'
         - name: TELEMETRY_SINKS
           value: 'otel_trace, otel_metric'
-        # 2. DISABLED OTEL SDK TO STOP THE NAME RESOLUTION ERRORS
         - name: OTEL_SDK_DISABLED
           value: "true"
         

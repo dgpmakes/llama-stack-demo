@@ -4,6 +4,7 @@ vllmImage: quay.io/modh/vllm:rhoai-2.23-cuda
 app: llama-stack-demo-lsd
 namespace: llama-stack-demo
 partOf: llama-stack-demo
+ignoreHelmHooks: true #Use this to uninstall Grafana deployment automatically
 
 lsdName: rh-dev
 lsdImage: "registry.redhat.io/rhoai/odh-llama-stack-core-rhel9@sha256:a9e415ce30b0a61ae35ef43870b03ccb193074fdbd02683757f1908343266837"

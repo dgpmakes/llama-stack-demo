@@ -12,7 +12,7 @@ spec:
   json: |
     {
       "title": "Distributed Traces",
-      "uid": "{{ .Values.app }}-traces-{{ .Release.Namespace }}",
+      "uid": "{{ printf "%s-traces-%s" .Values.app .Release.Namespace | trunc 40 }}",
       "tags": ["traces", "tempo", "{{ .Values.app }}"],
       "timezone": "browser",
       "schemaVersion": 39,
