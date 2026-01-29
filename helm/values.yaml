@@ -10,14 +10,21 @@ lsdImage: "registry.redhat.io/rhoai/odh-llama-stack-core-rhel9@sha256:a9e415ce30
 lsdBaseDir: /opt/app-root/src
 lsdPort: 8321
 
-lsdEmbeddingModel: granite-embedding-125m
+lsdEmbeddingModel: sentence-transformers/nomic-ai/nomic-embed-text-v1.5
 lsdEmbeddingDimension: 768
 lsdEmbeddingModelProvider: sentence-transformers
+allowUnknownEmbeddingModel: true
 lsdChunkSizeInTokens: 256
+lsdChunkOverlapInTokens: 400
+lsdRanker: default
+lsdScoreThreshold: 0.7
+lsdMaxNumResults: 10
 lsdVectorStoreName: "rag-store"
-lsdTestQuery: "Tell me about Llama Stack"
+lsdVectorStoreProviderId: milvus
+lsdTestQuery: Tell me about taxes in Lysmark.
+tavilySecretName: ""
 
-llamaStackDemoCoreImage: quay.io/atarazana/llama-stack-demo-core:0.2.1
+llamaStackDemoCoreImage: quay.io/dgarciap/llama-stack-demo-app:0.2.2
 loaderDelay: 10
 loaderJobRetries: 30
 lsdScoreThreshold: 0.7
@@ -67,9 +74,9 @@ models:
       - llama3_json
       - --chat-template
       - /opt/app-root/template/tool_chat_template_llama3.1_json.jinja
-  - name: granite-embedding-125m
-    displayName: Granite Embedding 125M
-    id: ibm-granite/granite-embedding-125m-english
+  - name: nomic-embed-text-v1-5
+    displayName: Nomic Embed Text v1.5
+    id: nomic-ai/nomic-embed-text-v1.5
     url: "inline"
     embeddingsModel: true
     vectorDimension: 768

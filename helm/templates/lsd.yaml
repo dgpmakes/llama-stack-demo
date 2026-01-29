@@ -57,6 +57,13 @@ spec:
           value: {{ .Values.milvusDbPath }}
         - name: FMS_ORCHESTRATOR_URL
           value: {{ .Values.fmsOchestratorUrl }}
+        {{- if .Values.tavilySecretName }}
+        - name: TAVILY_SEARCH_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: TAVILY_SEARCH_API_KEY
+              name: {{ .Values.tavilySecretName }}
+        {{- end }}
         - name: OTEL_SERVICE_NAME
           value: {{ .Values.app }}
         - name: OTEL_EXPORTER_OTLP_ENDPOINT

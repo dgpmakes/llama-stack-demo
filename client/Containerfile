@@ -16,7 +16,15 @@ ARG COMPONENT_NAME
 USER 0
 
 # Install system dependencies (Milvus SDK sometimes needs gcc during build)
-RUN dnf install -y git gcc && dnf clean all
+# Support both UBI (dnf) and Debian/Ubuntu (apt-get) base images.
+RUN if command -v dnf >/dev/null 2>&1; then \
+      dnf install -y git gcc curl && dnf clean all; \
+    elif command -v apt-get >/dev/null 2>&1; then \
+      apt-get update && apt-get install -y --no-install-recommends git gcc curl && rm -rf /var/lib/apt/lists/*; \
+    else \
+      echo "No supported package manager found (dnf or apt-get)" >&2; \
+      exit 1; \
+    fi
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \

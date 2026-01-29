@@ -120,11 +120,35 @@ def load_command() -> None:
             delete_vector_store(client, vector_store.id)
             logger.info(f"Deleted vector store: {vector_store.id}")
 
-        # Get embedding model
-        embedding_model = get_embedding_model(client, embedding_model_id, embedding_model_provider)
-        if not embedding_model:
-            raise ValueError(f"Embedding model {embedding_model_id} not found for provider {embedding_model_provider}")
-        logger.info(f"Using embedding model: {embedding_model.identifier} (dimension: {embedding_model.metadata['embedding_dimension']})")
+        # Get embedding model (optional strict check)
+        allow_unknown_embedding_model = os.environ.get(
+            "ALLOW_UNKNOWN_EMBEDDING_MODEL",
+            "false"
+        ).lower() in ["true", "1", "yes"]
+        embedding_model = None
+        try:
+            embedding_model = get_embedding_model(client, embedding_model_id, embedding_model_provider)
+        except ValueError as e:
+            if allow_unknown_embedding_model:
+                logger.warning(
+                    "Embedding model lookup failed; continuing with configured "
+                    "EMBEDDING_MODEL and EMBEDDING_DIMENSION. Error: %s",
+                    e
+                )
+            else:
+                raise
+        if embedding_model:
+            logger.info(
+                "Using embedding model: %s (dimension: %s)",
+                embedding_model.identifier,
+                embedding_model.metadata.get("embedding_dimension")
+            )
+        else:
+            logger.info(
+                "Using embedding model from env: %s (dimension: %s)",
+                embedding_model_id,
+                embedding_model_dimension
+            )
 
         # Load documents from folder
         files_paths: List[Path] = list_files_in_folder(docs_folder)

@@ -209,16 +209,13 @@ data:
         config:
           openai_api_key: ${env.OPENAI_API_KEY:=}
       tool_runtime:
-      - provider_id: brave-search
-        provider_type: remote::brave-search
-        config:
-          api_key: ${env.BRAVE_SEARCH_API_KEY:=}
-          max_results: 3
+      {{- if .Values.tavilySecretName }}
       - provider_id: tavily-search
         provider_type: remote::tavily-search
         config:
           api_key: ${env.TAVILY_SEARCH_API_KEY:=}
           max_results: 3
+      {{- end }}
       - provider_id: rag-runtime
         provider_type: inline::rag-runtime
         config: {}
@@ -264,15 +261,31 @@ data:
     scoring_fns: []
     benchmarks: []
     tool_groups:
+    {{- if .Values.tavilySecretName }}
     - toolgroup_id: builtin::websearch
       provider_id: tavily-search
+    {{- end }}
     - toolgroup_id: builtin::rag
       provider_id: rag-runtime
     {{- range .Values.mcpServers }}
     - toolgroup_id: mcp::{{ .id }}
       provider_id: {{ .provider_id }}
       mcp_endpoint:
-        uri: {{ .protocol }}://{{ .host }}:{{ .port }}{{ .uri }}
+        uri: {{ .protocol }}://{{ .host }}.{{ $.Release.Namespace }}.svc:{{ .port }}{{ .uri }}
     {{- end }}
+    registered_resources:
+      tool_groups:
+      {{- if .Values.tavilySecretName }}
+      - toolgroup_id: builtin::websearch
+        provider_id: tavily-search
+      {{- end }}
+      - toolgroup_id: builtin::rag
+        provider_id: rag-runtime
+      {{- range .Values.mcpServers }}
+      - toolgroup_id: mcp::{{ .id }}
+        provider_id: {{ .provider_id }}
+        mcp_endpoint:
+          uri: {{ .protocol }}://{{ .host }}.{{ $.Release.Namespace }}.svc:{{ .port }}{{ .uri }}
+      {{- end }}
     server:
       port: 8321

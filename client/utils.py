@@ -50,11 +50,51 @@ def get_embedding_model(
         raise ValueError("Embedding model provider is required")
     
     models = client.models.list()
-    for model in models:
-        if model.identifier == embedding_model_id and model.provider_id == embedding_model_provider and model.api_model_type == "embedding":
+    embedding_models = [
+        model for model in models
+        if model.api_model_type == "embedding"
+    ]
+    provider_models = [
+        model for model in embedding_models
+        if model.provider_id == embedding_model_provider
+    ]
+
+    def matches_model(model: Model) -> bool:
+        if model.identifier == embedding_model_id:
+            return True
+        metadata = getattr(model, "metadata", {}) or {}
+        candidate_ids = {
+            getattr(model, "model_id", None),
+            metadata.get("model_id"),
+            metadata.get("provider_model_id"),
+            metadata.get("hf_repo_id"),
+            metadata.get("repo_id"),
+            metadata.get("identifier"),
+        }
+        return embedding_model_id in candidate_ids
+
+    for model in provider_models:
+        if matches_model(model):
             return model
-    
-    raise ValueError(f"Embedding model {embedding_model_id} not found for provider {embedding_model_provider}")
+
+    # Fallback: match across any provider
+    for model in embedding_models:
+        if matches_model(model):
+            return model
+
+    # If there's only one embedding model, assume it's the intended one
+    if len(embedding_models) == 1:
+        return embedding_models[0]
+
+    available = ", ".join(
+        f"{model.identifier} (provider={model.provider_id})"
+        for model in embedding_models
+    ) or "none"
+    raise ValueError(
+        "Embedding model "
+        f"{embedding_model_id} not found for provider {embedding_model_provider}. "
+        f"Available embeddings: {available}"
+    )
 
 
 def create_langchain_client(

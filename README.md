@@ -32,24 +32,21 @@ Install the Grafana operator.
 
 ### Install with Helm
 
-This default delployment deploys one model... TODO.
+This default deployment deploys one model.
 
 ```bash
-helm install llama-stack-demo helm/ --namespace ${PROJECT} --timeout 20m
+
+helm install llama-stack-demo helm/ --namespace ${PROJECT}  --timeout 20m
 ```
 
+# load your .env locally
+set -a
+source .env
+set +a
 
-If you have access to Intel Gaudi accelerators you could use this command which uses `helm/intel.values` instead:
-
-```bash
-helm install llama-stack-demo helm/ --namespace ${PROJECT} --values helm/intel.yaml --timeout 20m
-```
-
-If you want an NVIDIA deployment with two models run this. TODO explain which models... bla.
-
-```bash
-helm install llama-stack-demo helm/ --namespace ${PROJECT} --values helm/nvidia.yaml --timeout 20m
-```
+# create secret in cluster
+oc -n llama-stack-demo create secret generic tavily-key \
+  --from-literal=TAVILY_SEARCH_API_KEY="$TAVILY_API_KEY"
 
 ### Wait for pods
 
